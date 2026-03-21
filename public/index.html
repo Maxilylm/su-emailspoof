@@ -76,6 +76,24 @@
 
     .progress-bar { height: 6px; background: #334155; border-radius: 3px; overflow: hidden; margin-top: 0.5rem; }
     .progress-bar .fill { height: 100%; background: #dc2626; border-radius: 3px; transition: width 0.3s; }
+
+    .inbox-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+    .inbox-actions { display: flex; gap: 0.5rem; align-items: center; }
+    .inbox-msg { cursor: pointer; }
+    .inbox-msg:hover { background: #334155; }
+    .email-badge { background: #7c3aed; color: white; font-size: 0.7rem; padding: 2px 8px; border-radius: 9999px; font-family: monospace; }
+    .msg-preview { background: #0f172a; border: 1px solid #334155; border-radius: 0.75rem; padding: 1.5rem; margin-top: 1rem; }
+    .msg-preview-header { display: flex; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #334155; }
+    .msg-preview-meta { font-size: 0.85rem; color: #94a3b8; }
+    .msg-preview-meta strong { color: #f8fafc; }
+    .msg-preview iframe { width: 100%; min-height: 400px; border: 1px solid #334155; border-radius: 0.5rem; background: white; }
+    .addr-list { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+    .addr-chip { display: flex; align-items: center; gap: 0.35rem; background: #334155; padding: 0.3rem 0.75rem; border-radius: 9999px; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; }
+    .addr-chip:hover { background: #475569; }
+    .addr-chip.active { background: #7c3aed; color: white; }
+    .addr-chip .count { background: #0f172a; padding: 1px 6px; border-radius: 9999px; font-size: 0.7rem; }
+    .addr-chip .remove { color: #94a3b8; margin-left: 0.25rem; font-size: 0.7rem; }
+    .addr-chip .remove:hover { color: #f87171; }
   </style>
 </head>
 <body>
@@ -88,6 +106,7 @@
     <div class="tabs">
       <div class="tab active" data-tab="campaigns">Campaigns</div>
       <div class="tab" data-tab="new">New Campaign</div>
+      <div class="tab" data-tab="inbox">Temp Inbox</div>
     </div>
 
     <!-- Campaign List -->
@@ -141,8 +160,8 @@
               <select name="template" id="template-select" required></select>
             </div>
             <div class="form-group">
-              <label>SMTP Host</label>
-              <input type="text" name="smtp_host" required placeholder="smtp.yourserver.com">
+              <label>SMTP Host <small style="color:#94a3b8">(use <code>internal</code> for temp inbox)</small></label>
+              <input type="text" name="smtp_host" placeholder="smtp.yourserver.com or internal" value="internal">
             </div>
             <div class="form-group">
               <label>SMTP Port</label>
@@ -170,6 +189,41 @@
     </div>
   </div>
 
+    <!-- Temp Inbox -->
+    <div id="tab-inbox" style="display:none">
+      <div class="card">
+        <div class="inbox-header">
+          <h2>Temp Email Inbox</h2>
+          <div class="inbox-actions">
+            <input type="text" id="inbox-label" placeholder="Label (optional)" style="padding:0.4rem 0.6rem;background:#0f172a;border:1px solid #334155;border-radius:0.5rem;color:#e2e8f0;font-size:0.85rem;width:140px">
+            <button class="btn btn-primary btn-sm" onclick="generateTempEmail()">Generate Address</button>
+            <button class="btn btn-danger btn-sm" onclick="clearInbox()">Clear All</button>
+          </div>
+        </div>
+
+        <div id="inbox-addresses" class="addr-list"></div>
+
+        <table>
+          <thead><tr><th>From</th><th>To</th><th>Subject</th><th>Received</th><th></th></tr></thead>
+          <tbody id="inbox-messages"></tbody>
+        </table>
+        <div id="inbox-empty" class="empty" style="display:none"><p>No messages yet. Generate a temp address, then use it as a recipient with SMTP Host set to <code>internal</code>.</p></div>
+      </div>
+
+      <div id="inbox-preview" class="msg-preview" style="display:none">
+        <div class="msg-preview-header">
+          <div class="msg-preview-meta">
+            <div><strong>From:</strong> <span id="preview-from"></span></div>
+            <div><strong>To:</strong> <span id="preview-to"></span></div>
+            <div><strong>Subject:</strong> <span id="preview-subject"></span></div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="closePreview()">Close</button>
+        </div>
+        <iframe id="preview-frame" sandbox="allow-same-origin"></iframe>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <script>
@@ -186,8 +240,10 @@
       document.getElementById('tab-campaigns').style.display = name === 'campaigns' ? '' : 'none';
       document.getElementById('tab-new').style.display = name === 'new' ? '' : 'none';
       document.getElementById('tab-detail').style.display = name === 'detail' ? '' : 'none';
+      document.getElementById('tab-inbox').style.display = name === 'inbox' ? '' : 'none';
       if (name === 'campaigns') loadCampaigns();
       if (name === 'new') loadTemplates();
+      if (name === 'inbox') loadInbox();
     }
 
     function toast(msg, isError = false) {
@@ -305,6 +361,99 @@
       const d = document.createElement('div');
       d.textContent = str;
       return d.innerHTML;
+    }
+
+    // ── Temp Inbox ──
+    let inboxFilter = null;
+
+    async function generateTempEmail() {
+      const label = document.getElementById('inbox-label').value.trim();
+      const res = await fetch('/api/inbox/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ label })
+      });
+      const data = await res.json();
+      document.getElementById('inbox-label').value = '';
+      toast(`Generated: ${data.email}`);
+      loadInbox();
+    }
+
+    async function loadInbox() {
+      // Load addresses
+      const addrRes = await fetch('/api/inbox/addresses');
+      const addresses = await addrRes.json();
+      const addrEl = document.getElementById('inbox-addresses');
+
+      addrEl.innerHTML = addresses.map(a =>
+        `<span class="addr-chip ${inboxFilter === a.email ? 'active' : ''}" onclick="filterInbox('${a.email}')">
+          ${esc(a.label || a.email)} <span class="count">${a.message_count}</span>
+          <span class="remove" onclick="event.stopPropagation();deleteTempAddr('${a.email}')">&times;</span>
+        </span>`
+      ).join('');
+
+      // Load messages
+      const url = inboxFilter ? `/api/inbox?to=${encodeURIComponent(inboxFilter)}` : '/api/inbox';
+      const msgRes = await fetch(url);
+      const messages = await msgRes.json();
+      const tbody = document.getElementById('inbox-messages');
+      const empty = document.getElementById('inbox-empty');
+
+      if (messages.length === 0) {
+        tbody.innerHTML = '';
+        empty.style.display = '';
+      } else {
+        empty.style.display = 'none';
+        tbody.innerHTML = messages.map(m =>
+          `<tr class="inbox-msg" onclick="viewMessage('${m.id}')">
+            <td>${esc(m.from)}</td>
+            <td><span class="email-badge">${esc(m.to)}</span></td>
+            <td><strong>${esc(m.subject)}</strong></td>
+            <td>${new Date(m.received_at).toLocaleString()}</td>
+            <td><span style="color:#94a3b8;cursor:pointer" onclick="event.stopPropagation();deleteMessage('${m.id}')">&times;</span></td>
+          </tr>`
+        ).join('');
+      }
+    }
+
+    function filterInbox(email) {
+      inboxFilter = inboxFilter === email ? null : email;
+      loadInbox();
+    }
+
+    async function viewMessage(id) {
+      const res = await fetch(`/api/inbox/${id}`);
+      const msg = await res.json();
+      document.getElementById('preview-from').textContent = msg.from;
+      document.getElementById('preview-to').textContent = msg.to;
+      document.getElementById('preview-subject').textContent = msg.subject;
+      const frame = document.getElementById('preview-frame');
+      frame.srcdoc = msg.html;
+      document.getElementById('inbox-preview').style.display = '';
+    }
+
+    function closePreview() {
+      document.getElementById('inbox-preview').style.display = 'none';
+    }
+
+    async function deleteMessage(id) {
+      await fetch(`/api/inbox/${id}`, { method: 'DELETE' });
+      closePreview();
+      loadInbox();
+    }
+
+    async function deleteTempAddr(email) {
+      if (!confirm(`Delete ${email} and all its messages?`)) return;
+      await fetch(`/api/inbox/address/${encodeURIComponent(email)}`, { method: 'DELETE' });
+      if (inboxFilter === email) inboxFilter = null;
+      loadInbox();
+    }
+
+    async function clearInbox() {
+      if (!confirm('Delete all temp inbox messages?')) return;
+      await fetch('/api/inbox', { method: 'DELETE' });
+      closePreview();
+      loadInbox();
     }
 
     // Initial load

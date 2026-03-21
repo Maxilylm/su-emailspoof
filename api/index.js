@@ -14,6 +14,8 @@ const BASE_URL = process.env.BASE_URL || process.env.VERCEL_URL
 const store = {
   campaigns: new Map(),
   recipients: new Map(),
+  inbox: new Map(),    // temp email inbox: id -> { id, to, from, subject, html, received_at }
+  tempAddresses: new Map(), // email -> { created_at, label }
 };
 
 app.use(express.json());
@@ -55,14 +57,14 @@ app.get('/api/templates/:name', (req, res) => {
 app.post('/api/campaigns', (req, res) => {
   const { name, from_name, from_email, subject, template, smtp_host, smtp_port, smtp_user, smtp_pass, recipients } = req.body;
 
-  if (!name || !from_name || !from_email || !subject || !template || !smtp_host) {
+  if (!name || !from_name || !from_email || !subject || !template) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
   const campaignId = uuidv4();
   const campaign = {
     id: campaignId, name, from_name, from_email, subject, template,
-    smtp_host, smtp_port: smtp_port || 587, smtp_user: smtp_user || '', smtp_pass: smtp_pass || '',
+    smtp_host: smtp_host || 'internal', smtp_port: smtp_port || 587, smtp_user: smtp_user || '', smtp_pass: smtp_pass || '',
     created_at: new Date().toISOString(), status: 'draft'
   };
   store.campaigns.set(campaignId, campaign);
@@ -126,19 +128,24 @@ app.post('/api/campaigns/:id/launch', async (req, res) => {
     .filter(r => r.campaign_id === req.params.id && !r.sent_at);
   if (recipients.length === 0) return res.status(400).json({ error: 'No unsent recipients' });
 
-  const transporter = nodemailer.createTransport({
-    host: campaign.smtp_host,
-    port: campaign.smtp_port,
-    secure: campaign.smtp_port === 465,
-    auth: campaign.smtp_user ? { user: campaign.smtp_user, pass: campaign.smtp_pass } : undefined,
-    tls: { rejectUnauthorized: false }
-  });
+  const useInternalInbox = campaign.smtp_host.toLowerCase() === 'internal';
+
+  let transporter = null;
+  if (!useInternalInbox) {
+    transporter = nodemailer.createTransport({
+      host: campaign.smtp_host,
+      port: campaign.smtp_port,
+      secure: campaign.smtp_port === 465,
+      auth: campaign.smtp_user ? { user: campaign.smtp_user, pass: campaign.smtp_pass } : undefined,
+      tls: { rejectUnauthorized: false }
+    });
+  }
 
   const templates = loadTemplates();
   const templateHtml = templates[campaign.template] || '<p>Click <a href="{{link}}">here</a> to verify.</p>';
 
   campaign.status = 'sending';
-  res.json({ message: `Sending to ${recipients.length} recipients...` });
+  res.json({ message: `Sending to ${recipients.length} recipients${useInternalInbox ? ' (temp inbox)' : ''}...` });
 
   let sentCount = 0;
   for (const recipient of recipients) {
@@ -152,19 +159,37 @@ app.post('/api/campaigns/:id/launch', async (req, res) => {
       + `<img src="${pixelUrl}" width="1" height="1" style="display:none" />`;
 
     try {
-      await transporter.sendMail({
-        from: `"${campaign.from_name}" <${campaign.from_email}>`,
-        to: recipient.email,
-        subject: campaign.subject,
-        html: personalizedHtml
-      });
+      if (useInternalInbox) {
+        // Deliver to in-memory temp inbox instead of real SMTP
+        const msgId = uuidv4();
+        store.inbox.set(msgId, {
+          id: msgId,
+          to: recipient.email,
+          from: `"${campaign.from_name}" <${campaign.from_email}>`,
+          subject: campaign.subject,
+          html: personalizedHtml,
+          campaign_id: campaign.id,
+          received_at: new Date().toISOString()
+        });
+        // Auto-register the address if not already tracked
+        if (!store.tempAddresses.has(recipient.email)) {
+          store.tempAddresses.set(recipient.email, { created_at: new Date().toISOString(), label: 'auto' });
+        }
+      } else {
+        await transporter.sendMail({
+          from: `"${campaign.from_name}" <${campaign.from_email}>`,
+          to: recipient.email,
+          subject: campaign.subject,
+          html: personalizedHtml
+        });
+      }
       recipient.sent_at = new Date().toISOString();
       sentCount++;
     } catch (err) {
       console.error(`Failed to send to ${recipient.email}:`, err.message);
     }
 
-    await new Promise(r => setTimeout(r, 100));
+    if (!useInternalInbox) await new Promise(r => setTimeout(r, 100));
   }
 
   campaign.status = 'sent';
@@ -194,6 +219,66 @@ app.get('/track/:token', (req, res) => {
     }
   }
   res.sendFile(path.join(__dirname, '..', 'public', 'phished.html'));
+});
+
+// ── Temp Email Inbox ──
+
+// Generate a random temp address
+app.post('/api/inbox/generate', (req, res) => {
+  const { label } = req.body || {};
+  const random = uuidv4().split('-')[0];
+  const email = `temp-${random}@phishsim.local`;
+  store.tempAddresses.set(email, { created_at: new Date().toISOString(), label: label || '' });
+  res.json({ email });
+});
+
+// List all temp addresses
+app.get('/api/inbox/addresses', (req, res) => {
+  const addresses = [];
+  for (const [email, meta] of store.tempAddresses) {
+    const count = [...store.inbox.values()].filter(m => m.to === email).length;
+    addresses.push({ email, ...meta, message_count: count });
+  }
+  res.json(addresses);
+});
+
+// List messages (optionally filter by ?to=email)
+app.get('/api/inbox', (req, res) => {
+  let messages = [...store.inbox.values()];
+  if (req.query.to) {
+    messages = messages.filter(m => m.to === req.query.to);
+  }
+  messages.sort((a, b) => new Date(b.received_at) - new Date(a.received_at));
+  res.json(messages.map(({ id, to, from, subject, received_at }) => ({ id, to, from, subject, received_at })));
+});
+
+// Get single message (full HTML)
+app.get('/api/inbox/:id', (req, res) => {
+  const msg = store.inbox.get(req.params.id);
+  if (!msg) return res.status(404).json({ error: 'Message not found' });
+  res.json(msg);
+});
+
+// Delete a message
+app.delete('/api/inbox/:id', (req, res) => {
+  store.inbox.delete(req.params.id);
+  res.json({ success: true });
+});
+
+// Delete a temp address and its messages
+app.delete('/api/inbox/address/:email', (req, res) => {
+  const email = req.params.email;
+  store.tempAddresses.delete(email);
+  for (const [id, msg] of store.inbox) {
+    if (msg.to === email) store.inbox.delete(id);
+  }
+  res.json({ success: true });
+});
+
+// Clear entire inbox
+app.delete('/api/inbox', (req, res) => {
+  store.inbox.clear();
+  res.json({ success: true });
 });
 
 // API: Campaign stats
