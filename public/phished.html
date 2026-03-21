@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Security Awareness Training</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+    .container {
+      max-width: 640px; width: 90%; text-align: center; padding: 3rem 2rem;
+    }
+    .icon {
+      width: 120px; height: 120px; margin: 0 auto 2rem;
+      background: #7f1d1d; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    .icon svg { width: 60px; height: 60px; fill: #f87171; }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(220,38,38,0.4); }
+      50% { box-shadow: 0 0 0 20px rgba(220,38,38,0); }
+    }
+
+    h1 { font-size: 2.5rem; color: #f87171; margin-bottom: 0.5rem; }
+    .subtitle { font-size: 1.1rem; color: #94a3b8; margin-bottom: 2rem; }
+
+    .card {
+      background: #1e293b; border: 1px solid #334155; border-radius: 1rem;
+      padding: 2rem; text-align: left; margin-bottom: 1.5rem;
+    }
+    .card h2 { font-size: 1.15rem; color: #f8fafc; margin-bottom: 1rem; }
+    .card p { color: #94a3b8; line-height: 1.6; margin-bottom: 0.75rem; font-size: 0.95rem; }
+
+    .tips { list-style: none; padding: 0; }
+    .tips li {
+      padding: 0.75rem 1rem; margin-bottom: 0.5rem;
+      background: #0f172a; border-radius: 0.5rem; border-left: 3px solid #dc2626;
+      font-size: 0.9rem; color: #cbd5e1;
+    }
+    .tips li strong { color: #f8fafc; }
+
+    .footer { margin-top: 2rem; font-size: 0.8rem; color: #475569; }
+    .footer p { margin-bottom: 0.25rem; }
+
+    .badge {
+      display: inline-block; background: #dc2626; color: white;
+      padding: 0.25rem 1rem; border-radius: 9999px;
+      font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em;
+      margin-bottom: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+    </div>
+
+    <div class="badge">PHISHING SIMULATION</div>
+    <h1>You've Been Phished!</h1>
+    <p class="subtitle">This was a simulated phishing email sent by your security team as part of an awareness training exercise.</p>
+
+    <div class="card">
+      <h2>Don't worry - you're safe</h2>
+      <p>No real harm was done. This was a controlled test to help you recognize phishing attempts. Your click has been recorded anonymously to help improve our security training program.</p>
+      <p>The email you received contained several red flags that are common in real phishing attacks. Let's review what to look for next time:</p>
+    </div>
+
+    <div class="card">
+      <h2>How to Spot Phishing Emails</h2>
+      <ul class="tips">
+        <li><strong>Check the sender's email address carefully.</strong> Phishing emails often use addresses that look similar to legitimate ones but have subtle differences.</li>
+        <li><strong>Be suspicious of urgent language.</strong> Phrases like "immediate action required" or "your account will be suspended" are designed to make you act without thinking.</li>
+        <li><strong>Hover over links before clicking.</strong> The displayed text may differ from the actual URL destination. If it looks suspicious, don't click.</li>
+        <li><strong>Don't enter credentials on unfamiliar pages.</strong> Always verify you're on the correct website before entering your username and password.</li>
+        <li><strong>When in doubt, verify through another channel.</strong> Contact the supposed sender directly using a known phone number or email address.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>What should I do now?</h2>
+      <p>Take a moment to review the email that brought you here. Try to identify the red flags. In the future, if you receive a suspicious email, report it to your IT security team instead of clicking any links.</p>
+      <p>Remember: it's always better to ask and verify than to click and regret.</p>
+    </div>
+
+    <div class="footer">
+      <p>This is an authorized security awareness training exercise.</p>
+      <p>If you have questions, contact your IT Security team.</p>
+    </div>
+  </div>
+</body>
+</html>

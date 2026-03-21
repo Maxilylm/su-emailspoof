@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phishing Training Tool</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+
+    .header { background: #1e293b; border-bottom: 1px solid #334155; padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; }
+    .header h1 { font-size: 1.25rem; color: #f8fafc; }
+    .header h1 span { color: #f87171; }
+    .header .badge { background: #dc2626; color: white; font-size: 0.7rem; padding: 2px 8px; border-radius: 9999px; margin-left: 0.5rem; }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+
+    .tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .tab { padding: 0.5rem 1.25rem; background: #1e293b; border: 1px solid #334155; border-radius: 0.5rem; cursor: pointer; color: #94a3b8; transition: all 0.2s; }
+    .tab:hover { background: #334155; }
+    .tab.active { background: #dc2626; border-color: #dc2626; color: white; }
+
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 0.75rem; padding: 1.5rem; margin-bottom: 1.5rem; }
+    .card h2 { font-size: 1.1rem; margin-bottom: 1rem; color: #f8fafc; }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-group label { display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.35rem; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 0.6rem 0.75rem; background: #0f172a; border: 1px solid #334155;
+      border-radius: 0.5rem; color: #e2e8f0; font-size: 0.9rem; outline: none; transition: border 0.2s;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #dc2626; }
+    .form-group textarea { min-height: 120px; font-family: monospace; resize: vertical; }
+
+    .btn { padding: 0.6rem 1.5rem; border: none; border-radius: 0.5rem; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: all 0.2s; }
+    .btn-primary { background: #dc2626; color: white; }
+    .btn-primary:hover { background: #b91c1c; }
+    .btn-danger { background: #7f1d1d; color: #fca5a5; }
+    .btn-danger:hover { background: #991b1b; }
+    .btn-secondary { background: #334155; color: #e2e8f0; }
+    .btn-secondary:hover { background: #475569; }
+    .btn-sm { padding: 0.35rem 0.75rem; font-size: 0.8rem; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-group { display: flex; gap: 0.5rem; margin-top: 1rem; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 0.75rem; border-bottom: 1px solid #334155; font-size: 0.85rem; }
+    th { color: #94a3b8; font-weight: 600; }
+    tr:hover { background: #334155; }
+
+    .status { display: inline-block; padding: 2px 10px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+    .status-draft { background: #1e3a5f; color: #93c5fd; }
+    .status-sending { background: #713f12; color: #fde047; }
+    .status-sent { background: #14532d; color: #86efac; }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+    .stat-card { background: #0f172a; border: 1px solid #334155; border-radius: 0.75rem; padding: 1rem; text-align: center; }
+    .stat-card .number { font-size: 2rem; font-weight: 700; color: #f8fafc; }
+    .stat-card .label { font-size: 0.8rem; color: #94a3b8; margin-top: 0.25rem; }
+    .stat-card.danger .number { color: #f87171; }
+
+    .empty { text-align: center; padding: 3rem; color: #64748b; }
+    .empty p { margin-top: 0.5rem; }
+
+    .toast { position: fixed; bottom: 2rem; right: 2rem; background: #14532d; color: #86efac; padding: 0.75rem 1.5rem; border-radius: 0.5rem; display: none; z-index: 100; border: 1px solid #16a34a; }
+    .toast.error { background: #7f1d1d; color: #fca5a5; border-color: #dc2626; }
+    .toast.show { display: block; animation: slideIn 0.3s ease; }
+    @keyframes slideIn { from { transform: translateY(1rem); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    .detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+    .back-btn { color: #94a3b8; cursor: pointer; font-size: 0.85rem; }
+    .back-btn:hover { color: #f8fafc; }
+
+    .progress-bar { height: 6px; background: #334155; border-radius: 3px; overflow: hidden; margin-top: 0.5rem; }
+    .progress-bar .fill { height: 100%; background: #dc2626; border-radius: 3px; transition: width 0.3s; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1><span>PhishSim</span> Training Tool</h1>
+    <span class="badge">INTERNAL USE ONLY</span>
+  </div>
+
+  <div class="container">
+    <div class="tabs">
+      <div class="tab active" data-tab="campaigns">Campaigns</div>
+      <div class="tab" data-tab="new">New Campaign</div>
+    </div>
+
+    <!-- Campaign List -->
+    <div id="tab-campaigns">
+      <div id="campaign-list"></div>
+    </div>
+
+    <!-- Campaign Detail -->
+    <div id="tab-detail" style="display:none">
+      <div class="detail-header">
+        <span class="back-btn" onclick="showTab('campaigns')">&larr; Back to Campaigns</span>
+        <div class="btn-group" style="margin:0">
+          <button class="btn btn-primary btn-sm" id="btn-launch" onclick="launchCampaign()">Launch Campaign</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteCampaign()">Delete</button>
+        </div>
+      </div>
+      <div id="detail-stats" class="stats-grid"></div>
+      <div class="card">
+        <h2 id="detail-title">Campaign Details</h2>
+        <table>
+          <thead><tr><th>Email</th><th>Name</th><th>Sent</th><th>Opened</th><th>Clicked</th></tr></thead>
+          <tbody id="detail-recipients"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- New Campaign -->
+    <div id="tab-new" style="display:none">
+      <div class="card">
+        <h2>Create New Campaign</h2>
+        <form id="campaign-form" onsubmit="createCampaign(event)">
+          <div class="form-grid">
+            <div class="form-group full">
+              <label>Campaign Name</label>
+              <input type="text" name="name" required placeholder="Q1 2026 Security Training">
+            </div>
+            <div class="form-group">
+              <label>From Name (Spoofed)</label>
+              <input type="text" name="from_name" required placeholder="IT Department">
+            </div>
+            <div class="form-group">
+              <label>From Email (Spoofed)</label>
+              <input type="email" name="from_email" required placeholder="it-support@company.com">
+            </div>
+            <div class="form-group full">
+              <label>Subject Line</label>
+              <input type="text" name="subject" required placeholder="Action Required: Verify Your Account">
+            </div>
+            <div class="form-group">
+              <label>Email Template</label>
+              <select name="template" id="template-select" required></select>
+            </div>
+            <div class="form-group">
+              <label>SMTP Host</label>
+              <input type="text" name="smtp_host" required placeholder="smtp.yourserver.com">
+            </div>
+            <div class="form-group">
+              <label>SMTP Port</label>
+              <input type="number" name="smtp_port" value="587" placeholder="587">
+            </div>
+            <div class="form-group">
+              <label>SMTP Username (optional)</label>
+              <input type="text" name="smtp_user" placeholder="user@server.com">
+            </div>
+            <div class="form-group">
+              <label>SMTP Password (optional)</label>
+              <input type="password" name="smtp_pass" placeholder="password">
+            </div>
+            <div class="form-group full">
+              <label>Recipients (one per line: <code>Name &lt;email@example.com&gt;</code> or just <code>email@example.com</code>)</label>
+              <textarea name="recipients" required placeholder="John Doe <john@company.com>&#10;Jane Smith <jane@company.com>&#10;bob@company.com"></textarea>
+            </div>
+          </div>
+          <div class="btn-group">
+            <button type="submit" class="btn btn-primary">Create Campaign</button>
+            <button type="reset" class="btn btn-secondary">Reset</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    let currentCampaignId = null;
+
+    // Tab switching
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => showTab(tab.dataset.tab));
+    });
+
+    function showTab(name) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelector(`[data-tab="${name}"]`)?.classList.add('active');
+      document.getElementById('tab-campaigns').style.display = name === 'campaigns' ? '' : 'none';
+      document.getElementById('tab-new').style.display = name === 'new' ? '' : 'none';
+      document.getElementById('tab-detail').style.display = name === 'detail' ? '' : 'none';
+      if (name === 'campaigns') loadCampaigns();
+      if (name === 'new') loadTemplates();
+    }
+
+    function toast(msg, isError = false) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.className = 'toast show' + (isError ? ' error' : '');
+      setTimeout(() => el.className = 'toast', 3000);
+    }
+
+    async function loadTemplates() {
+      const res = await fetch('/api/templates');
+      const templates = await res.json();
+      const select = document.getElementById('template-select');
+      select.innerHTML = templates.map(t => `<option value="${t.name}">${t.name}</option>`).join('');
+    }
+
+    async function loadCampaigns() {
+      const res = await fetch('/api/campaigns');
+      const campaigns = await res.json();
+      const el = document.getElementById('campaign-list');
+
+      if (campaigns.length === 0) {
+        el.innerHTML = '<div class="card empty"><h2>No Campaigns Yet</h2><p>Create your first phishing training campaign to get started.</p></div>';
+        return;
+      }
+
+      el.innerHTML = '<div class="card"><table><thead><tr><th>Name</th><th>Subject</th><th>Status</th><th>Recipients</th><th>Clicked</th><th>Rate</th></tr></thead><tbody>' +
+        campaigns.map(c => {
+          const rate = c.sent_count > 0 ? Math.round((c.clicked_count / c.sent_count) * 100) : 0;
+          return `<tr style="cursor:pointer" onclick="viewCampaign('${c.id}')">
+            <td><strong>${esc(c.name)}</strong></td>
+            <td>${esc(c.subject)}</td>
+            <td><span class="status status-${c.status}">${c.status}</span></td>
+            <td>${c.recipient_count}</td>
+            <td>${c.clicked_count || 0}</td>
+            <td>${rate}%</td>
+          </tr>`;
+        }).join('') + '</tbody></table></div>';
+    }
+
+    async function viewCampaign(id) {
+      currentCampaignId = id;
+      const res = await fetch(`/api/campaigns/${id}`);
+      const data = await res.json();
+
+      document.getElementById('detail-title').textContent = data.name;
+      document.getElementById('btn-launch').disabled = data.status === 'sent';
+
+      const total = data.recipients.length;
+      const sent = data.recipients.filter(r => r.sent_at).length;
+      const opened = data.recipients.filter(r => r.opened_at).length;
+      const clicked = data.recipients.filter(r => r.clicked_at).length;
+
+      document.getElementById('detail-stats').innerHTML = `
+        <div class="stat-card"><div class="number">${total}</div><div class="label">Total Recipients</div></div>
+        <div class="stat-card"><div class="number">${sent}</div><div class="label">Emails Sent</div></div>
+        <div class="stat-card"><div class="number">${opened}</div><div class="label">Opened</div></div>
+        <div class="stat-card danger"><div class="number">${clicked}</div><div class="label">Clicked (Phished)</div>
+          <div class="progress-bar"><div class="fill" style="width:${total > 0 ? (clicked/total*100) : 0}%"></div></div>
+        </div>
+      `;
+
+      document.getElementById('detail-recipients').innerHTML = data.recipients.map(r =>
+        `<tr>
+          <td>${esc(r.email)}</td>
+          <td>${esc(r.name || '-')}</td>
+          <td>${r.sent_at ? '&#10003;' : '-'}</td>
+          <td>${r.opened_at ? '&#10003;' : '-'}</td>
+          <td style="color:${r.clicked_at ? '#f87171' : 'inherit'}">${r.clicked_at ? '&#10003; PHISHED' : '-'}</td>
+        </tr>`
+      ).join('');
+
+      showTab('detail');
+    }
+
+    async function createCampaign(e) {
+      e.preventDefault();
+      const form = new FormData(e.target);
+      const data = Object.fromEntries(form.entries());
+      const res = await fetch('/api/campaigns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const result = await res.json();
+      if (res.ok) {
+        toast(`Campaign created with ${result.recipientCount} recipients`);
+        e.target.reset();
+        showTab('campaigns');
+      } else {
+        toast(result.error || 'Error creating campaign', true);
+      }
+    }
+
+    async function launchCampaign() {
+      if (!confirm('Send phishing training emails to all recipients?')) return;
+      const res = await fetch(`/api/campaigns/${currentCampaignId}/launch`, { method: 'POST' });
+      const result = await res.json();
+      if (res.ok) {
+        toast(result.message);
+        setTimeout(() => viewCampaign(currentCampaignId), 2000);
+      } else {
+        toast(result.error || 'Launch failed', true);
+      }
+    }
+
+    async function deleteCampaign() {
+      if (!confirm('Delete this campaign and all tracking data?')) return;
+      await fetch(`/api/campaigns/${currentCampaignId}`, { method: 'DELETE' });
+      toast('Campaign deleted');
+      showTab('campaigns');
+    }
+
+    function esc(str) {
+      const d = document.createElement('div');
+      d.textContent = str;
+      return d.innerHTML;
+    }
+
+    // Initial load
+    loadCampaigns();
+  </script>
+</body>
+</html>

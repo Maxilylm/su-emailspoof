@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SU EmailSpoof - Slopmachine Index</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0a0a0a; color: #e0e0e0; min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .index {
+      max-width: 700px; width: 90%; padding: 3rem 0;
+    }
+    .index h1 {
+      font-size: 2rem; margin-bottom: 0.25rem;
+      background: linear-gradient(135deg, #dc2626, #f97316);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .index .sub { color: #666; font-size: 0.95rem; margin-bottom: 2rem; }
+    .project-card {
+      background: #111; border: 1px solid #222; border-radius: 12px;
+      padding: 1.5rem; margin-bottom: 1rem; transition: all 0.2s;
+      text-decoration: none; display: block; color: inherit;
+    }
+    .project-card:hover { border-color: #dc2626; transform: translateY(-2px); }
+    .project-card h2 { font-size: 1.15rem; color: #f8f8f8; margin-bottom: 0.5rem; }
+    .project-card p { color: #888; font-size: 0.9rem; line-height: 1.5; }
+    .tags { display: flex; gap: 0.5rem; margin-top: 0.75rem; flex-wrap: wrap; }
+    .tag {
+      background: #1a1a1a; border: 1px solid #333; padding: 2px 10px;
+      border-radius: 9999px; font-size: 0.75rem; color: #999;
+    }
+    .tag.red { border-color: #7f1d1d; color: #f87171; background: #1c0a0a; }
+    .status { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; margin-right: 0.5rem; }
+    .footer { text-align: center; margin-top: 2rem; color: #444; font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+  <div class="index">
+    <h1>su-emailspoof</h1>
+    <p class="sub">Slopmachine Project Index</p>
+
+    <a class="project-card" href="/index.html">
+      <h2><span class="status"></span>PhishSim - Phishing Training Dashboard</h2>
+      <p>Internal phishing awareness training tool. Create and manage simulated phishing campaigns, send spoofed emails to employees, and track who clicks. Employees who click see a training page explaining how to spot phishing.</p>
+      <div class="tags">
+        <span class="tag red">security</span>
+        <span class="tag">express</span>
+        <span class="tag">nodemailer</span>
+        <span class="tag">sqlite</span>
+        <span class="tag">email-spoofing</span>
+        <span class="tag">awareness-training</span>
+      </div>
+    </a>
+
+    <a class="project-card" href="/phished.html">
+      <h2>Phished Landing Page</h2>
+      <p>The "You've Been Phished" awareness page shown to employees who click simulated phishing links. Includes tips on how to recognize phishing attempts.</p>
+      <div class="tags">
+        <span class="tag">landing-page</span>
+        <span class="tag">training</span>
+      </div>
+    </a>
+
+    <div class="project-card">
+      <h2>Features</h2>
+      <p>
+        &bull; Campaign management with SMTP configuration<br>
+        &bull; 4 built-in phishing email templates (password reset, document share, IT update, package delivery)<br>
+        &bull; Mass email sending with rate limiting<br>
+        &bull; Open tracking via pixel<br>
+        &bull; Click tracking with unique tokens<br>
+        &bull; Real-time campaign statistics dashboard<br>
+        &bull; "You've Been Phished" training landing page
+      </p>
+    </div>
+
+    <div class="project-card">
+      <h2>Quick Start</h2>
+      <p>
+        <code style="color:#f87171">npm install && npm start</code><br><br>
+        Then open <code style="color:#f87171">http://localhost:3000</code> in your browser.<br>
+        Set <code style="color:#f87171">BASE_URL</code> env var for production (used in tracking links).
+      </p>
+    </div>
+
+    <div class="footer">
+      <p>slopmachine // su-emailspoof // for authorized security training only</p>
+    </div>
+  </div>
+</body>
+</html>

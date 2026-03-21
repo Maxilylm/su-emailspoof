@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body style="font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px;">
+  <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+    <div style="background: #ff9900; padding: 20px 30px;">
+      <h1 style="color: white; font-size: 18px; margin: 0;">Package Delivery Notification</h1>
+    </div>
+    <div style="padding: 30px;">
+      <p style="color: #333; line-height: 1.6;">Hello {{name}},</p>
+      <p style="color: #333; line-height: 1.6;">We attempted to deliver your package today but were unable to complete the delivery. Your package is being held at our distribution center.</p>
+      <div style="background: #f8f9fa; border-radius: 5px; padding: 15px; margin: 20px 0;">
+        <p style="color: #333; margin: 5px 0; font-size: 14px;"><strong>Tracking Number:</strong> 1Z999AA10123456784</p>
+        <p style="color: #333; margin: 5px 0; font-size: 14px;"><strong>Status:</strong> Delivery Failed - Action Required</p>
+        <p style="color: #333; margin: 5px 0; font-size: 14px;"><strong>Scheduled:</strong> Re-delivery within 48 hours</p>
+      </div>
+      <p style="color: #333; line-height: 1.6;">Please confirm your delivery address to reschedule:</p>
+      <div style="text-align: center; margin: 25px 0;">
+        <a href="{{link}}" style="background: #ff9900; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Confirm Delivery Address</a>
+      </div>
+      <p style="color: #999; font-size: 12px;">If you don't confirm within 5 business days, the package will be returned to sender.</p>
+    </div>
+  </div>
+</body>
+</html>
