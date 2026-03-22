@@ -14,8 +14,8 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 // ── Database Layer ──
 // Uses Supabase when SUPABASE_URL + SUPABASE_ANON_KEY are set, otherwise falls back to in-memory
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 if (supabase) {
