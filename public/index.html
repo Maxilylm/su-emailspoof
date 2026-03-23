@@ -159,21 +159,35 @@
               <label>Email Template</label>
               <select name="template" id="template-select" required></select>
             </div>
-            <div class="form-group">
-              <label>SMTP Host <small style="color:#94a3b8">(use <code>internal</code> for temp inbox)</small></label>
-              <input type="text" name="smtp_host" placeholder="smtp.yourserver.com or internal" value="internal">
+            <div class="form-group full">
+              <label>Delivery Method</label>
+              <select id="smtp-preset" onchange="applySmtpPreset(this.value)">
+                <option value="internal">Temp Inbox (demo only — emails stay in app)</option>
+                <option value="gmail">Gmail (send to real emails via Google)</option>
+                <option value="sendgrid">SendGrid Free Tier (100 emails/day)</option>
+                <option value="brevo">Brevo / Sendinblue Free (300 emails/day)</option>
+                <option value="mailtrap">Mailtrap (testing sandbox)</option>
+                <option value="custom">Custom SMTP Server</option>
+              </select>
             </div>
-            <div class="form-group">
+            <div id="smtp-help" class="form-group full" style="display:none">
+              <div style="background:#1a1a2e;border:1px solid #334155;border-radius:0.5rem;padding:0.75rem 1rem;font-size:0.8rem;color:#94a3b8;line-height:1.6" id="smtp-help-text"></div>
+            </div>
+            <div class="form-group" id="smtp-host-group">
+              <label>SMTP Host</label>
+              <input type="text" name="smtp_host" id="smtp_host" placeholder="smtp.yourserver.com" value="internal">
+            </div>
+            <div class="form-group" id="smtp-port-group">
               <label>SMTP Port</label>
-              <input type="number" name="smtp_port" value="587" placeholder="587">
+              <input type="number" name="smtp_port" id="smtp_port" value="587" placeholder="587">
             </div>
-            <div class="form-group">
-              <label>SMTP Username (optional)</label>
-              <input type="text" name="smtp_user" placeholder="user@server.com">
+            <div class="form-group" id="smtp-user-group">
+              <label>SMTP Username</label>
+              <input type="text" name="smtp_user" id="smtp_user" placeholder="user@server.com">
             </div>
-            <div class="form-group">
-              <label>SMTP Password (optional)</label>
-              <input type="password" name="smtp_pass" placeholder="password">
+            <div class="form-group" id="smtp-pass-group">
+              <label>SMTP Password / API Key</label>
+              <input type="password" name="smtp_pass" id="smtp_pass" placeholder="password or API key">
             </div>
             <div class="form-group full">
               <label>Recipients (one per line: <code>Name &lt;email@example.com&gt;</code> or just <code>email@example.com</code>)</label>
@@ -455,6 +469,88 @@
       closePreview();
       loadInbox();
     }
+
+    // ── SMTP Presets ──
+    const SMTP_PRESETS = {
+      internal: {
+        host: 'internal', port: 587, user: '', pass: '',
+        hideFields: true,
+        help: null,
+      },
+      gmail: {
+        host: 'smtp.gmail.com', port: 587, user: '', pass: '',
+        hideFields: false,
+        help: `<strong>Gmail Setup:</strong><br>
+          1. Go to <a href="https://myaccount.google.com/apppasswords" target="_blank" style="color:#60a5fa">Google App Passwords</a> (requires 2FA enabled)<br>
+          2. Create an app password for "Mail"<br>
+          3. Use your Gmail address as SMTP Username<br>
+          4. Paste the 16-character app password as SMTP Password<br>
+          <em>Limit: ~500 emails/day. From address will show your Gmail regardless of spoofed name.</em>`
+      },
+      sendgrid: {
+        host: 'smtp.sendgrid.net', port: 587, user: 'apikey', pass: '',
+        hideFields: false,
+        help: `<strong>SendGrid Free Tier:</strong><br>
+          1. Sign up at <a href="https://sendgrid.com" target="_blank" style="color:#60a5fa">sendgrid.com</a> (free: 100 emails/day)<br>
+          2. Go to Settings → API Keys → Create API Key (Full Access)<br>
+          3. SMTP Username is literally <code>apikey</code> (don't change it)<br>
+          4. SMTP Password is your API key starting with <code>SG.</code><br>
+          <em>SendGrid allows custom From addresses — spoofing works here.</em>`
+      },
+      brevo: {
+        host: 'smtp-relay.brevo.com', port: 587, user: '', pass: '',
+        hideFields: false,
+        help: `<strong>Brevo (Sendinblue) Free Tier:</strong><br>
+          1. Sign up at <a href="https://brevo.com" target="_blank" style="color:#60a5fa">brevo.com</a> (free: 300 emails/day)<br>
+          2. Go to SMTP & API → SMTP Settings<br>
+          3. Use your login email as SMTP Username<br>
+          4. Use the SMTP Key shown on that page as SMTP Password<br>
+          <em>Brevo allows custom sender names. Verify sender email in settings first.</em>`
+      },
+      mailtrap: {
+        host: 'sandbox.smtp.mailtrap.io', port: 2525, user: '', pass: '',
+        hideFields: false,
+        help: `<strong>Mailtrap (Testing Sandbox):</strong><br>
+          1. Sign up at <a href="https://mailtrap.io" target="_blank" style="color:#60a5fa">mailtrap.io</a> (free tier available)<br>
+          2. Go to Email Testing → Inboxes → SMTP Settings<br>
+          3. Copy the Username and Password shown<br>
+          <em>Emails go to Mailtrap's sandbox — they never reach real inboxes. Great for testing templates.</em>`
+      },
+      custom: {
+        host: '', port: 587, user: '', pass: '',
+        hideFields: false,
+        help: `<strong>Custom SMTP:</strong> Enter your own SMTP server details. Any standard SMTP server works (Postfix, Mailgun, Amazon SES, etc.).`
+      },
+    };
+
+    function applySmtpPreset(preset) {
+      const config = SMTP_PRESETS[preset];
+      if (!config) return;
+
+      document.getElementById('smtp_host').value = config.host;
+      document.getElementById('smtp_port').value = config.port;
+      document.getElementById('smtp_user').value = config.user;
+      document.getElementById('smtp_pass').value = config.pass;
+
+      // Show/hide SMTP fields for internal
+      const fields = ['smtp-host-group', 'smtp-port-group', 'smtp-user-group', 'smtp-pass-group'];
+      fields.forEach(id => {
+        document.getElementById(id).style.display = config.hideFields ? 'none' : '';
+      });
+
+      // Show/hide help text
+      const helpEl = document.getElementById('smtp-help');
+      const helpText = document.getElementById('smtp-help-text');
+      if (config.help) {
+        helpText.innerHTML = config.help;
+        helpEl.style.display = '';
+      } else {
+        helpEl.style.display = 'none';
+      }
+    }
+
+    // Apply default preset on load
+    applySmtpPreset('internal');
 
     // Initial load
     loadCampaigns();
