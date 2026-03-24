@@ -7,6 +7,14 @@ const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 
+// Brevo SMTP defaults — key comes from BREVO_SMTP_KEY env var
+const BREVO_SMTP = {
+  host: 'smtp-relay.brevo.com',
+  port: 587,
+  user: process.env.BREVO_SMTP_USER || 'a5d51e001@smtp-brevo.com',
+  pass: process.env.BREVO_SMTP_KEY || '',
+};
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '..', 'public')));
@@ -275,11 +283,17 @@ app.post('/api/campaigns', async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
+    // Use Brevo defaults when SMTP not provided or set to 'brevo'
+    const isBrevo = !smtp_host || smtp_host === 'brevo' || smtp_host === BREVO_SMTP.host;
+    const isInternal = smtp_host === 'internal';
+
     const campaignId = uuidv4();
     await db.createCampaign({
       id: campaignId, name, from_name, from_email, subject, template,
-      smtp_host: smtp_host || 'internal', smtp_port: smtp_port || 587,
-      smtp_user: smtp_user || '', smtp_pass: smtp_pass || '',
+      smtp_host: isInternal ? 'internal' : (isBrevo ? BREVO_SMTP.host : smtp_host),
+      smtp_port: isInternal ? 587 : (isBrevo ? BREVO_SMTP.port : (smtp_port || 587)),
+      smtp_user: isInternal ? '' : (isBrevo ? BREVO_SMTP.user : (smtp_user || '')),
+      smtp_pass: isInternal ? '' : (isBrevo ? BREVO_SMTP.pass : (smtp_pass || '')),
       status: 'draft', created_at: new Date().toISOString()
     });
 

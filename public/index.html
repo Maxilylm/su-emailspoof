@@ -162,10 +162,10 @@
             <div class="form-group full">
               <label>Delivery Method</label>
               <select id="smtp-preset" onchange="applySmtpPreset(this.value)">
+                <option value="brevo" selected>Brevo — Send to real emails (default)</option>
                 <option value="internal">Temp Inbox (demo only — emails stay in app)</option>
-                <option value="gmail">Gmail (send to real emails via Google)</option>
+                <option value="gmail">Gmail (send via Google)</option>
                 <option value="sendgrid">SendGrid Free Tier (100 emails/day)</option>
-                <option value="brevo">Brevo / Sendinblue Free (300 emails/day)</option>
                 <option value="mailtrap">Mailtrap (testing sandbox)</option>
                 <option value="custom">Custom SMTP Server</option>
               </select>
@@ -498,14 +498,9 @@
           <em>SendGrid allows custom From addresses — spoofing works here.</em>`
       },
       brevo: {
-        host: 'smtp-relay.brevo.com', port: 587, user: '', pass: '',
-        hideFields: false,
-        help: `<strong>Brevo (Sendinblue) Free Tier:</strong><br>
-          1. Sign up at <a href="https://brevo.com" target="_blank" style="color:#60a5fa">brevo.com</a> (free: 300 emails/day)<br>
-          2. Go to SMTP & API → SMTP Settings<br>
-          3. Use your login email as SMTP Username<br>
-          4. Use the SMTP Key shown on that page as SMTP Password<br>
-          <em>Brevo allows custom sender names. Verify sender email in settings first.</em>`
+        host: 'brevo', port: 587, user: '', pass: '',
+        hideFields: true,
+        help: `<strong>Brevo SMTP is preconfigured.</strong> Just enter recipients and hit Create. Emails are sent via Brevo (300/day free). The "From" name and email will be spoofed as entered above.`
       },
       mailtrap: {
         host: 'sandbox.smtp.mailtrap.io', port: 2525, user: '', pass: '',
@@ -550,7 +545,7 @@
     }
 
     // Apply default preset on load
-    applySmtpPreset('internal');
+    applySmtpPreset('brevo');
 
     // Initial load
     loadCampaigns();
