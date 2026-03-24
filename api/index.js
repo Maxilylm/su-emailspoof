@@ -374,9 +374,10 @@ app.post('/api/campaigns/:id/launch', async (req, res) => {
     const baseUrl = resolveBaseUrl();
 
     await db.updateCampaign(req.params.id, { status: 'sending' });
-    res.json({ message: `Sending to ${recipients.length} recipients${useInternalInbox ? ' (temp inbox)' : ''}...` });
 
+    // Send emails BEFORE responding (Vercel kills function after res.json)
     let sentCount = 0;
+    const errors = [];
     for (const recipient of recipients) {
       const trackingLink = `${baseUrl}/track/${recipient.token}`;
       const pixelUrl = `${baseUrl}/pixel/${recipient.token}`;
@@ -410,6 +411,7 @@ app.post('/api/campaigns/:id/launch', async (req, res) => {
         sentCount++;
       } catch (err) {
         console.error(`Failed to send to ${recipient.email}:`, err.message);
+        errors.push({ email: recipient.email, error: err.message });
       }
 
       if (!useInternalInbox) await new Promise(r => setTimeout(r, 100));
@@ -417,8 +419,17 @@ app.post('/api/campaigns/:id/launch', async (req, res) => {
 
     await db.updateCampaign(req.params.id, { status: 'sent' });
     console.log(`Campaign "${campaign.name}": sent ${sentCount}/${recipients.length}`);
+
+    // Respond AFTER sending is complete
+    res.json({
+      message: `Sent ${sentCount}/${recipients.length} emails`,
+      sent: sentCount,
+      total: recipients.length,
+      errors: errors.length > 0 ? errors : undefined
+    });
   } catch (err) {
     console.error('Launch error:', err);
+    res.status(500).json({ error: 'Launch failed: ' + err.message });
   }
 });
 
