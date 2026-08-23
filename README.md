@@ -2,7 +2,7 @@
 
 > A phishing-awareness training tool for running simulated campaigns and measuring how recipients respond.
 
-**[Live demo](https://su-emailspoof.vercel.app)**
+**[Live demo](https://emailspoof-mlx.vercel.app)**
 
 PhishSim is an educational security-awareness tool for authorized internal training. It lets you build a mock phishing campaign from realistic templates, send it to a list of recipients you control, and track who opens and who clicks — the same mechanics attackers use, surfaced so teams can measure and improve their defenses. It ships with a built-in temp-inbox so you can safely receive and inspect the simulated messages end to end. Intended only for consented awareness training, never for deceiving real targets.
 
@@ -33,4 +33,4 @@ Set `SUPABASE_URL` and `SUPABASE_ANON_KEY` in `.env` for persistence (omit them 
 
 ---
 
-Part of a series of 91 small web apps. [Browse them all](https://su-slopmachine.vercel.app).
+Part of a series of 91 small web apps. [Browse them all](https://lorenzoylosada.vercel.app).
