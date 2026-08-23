@@ -4,3 +4,9 @@ data/
 *.db
 .vercel
 .env*.local
+dist/
+.next/
+.env.local
+.status
+.attempts
+.claude/
