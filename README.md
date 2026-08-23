@@ -1,47 +1,36 @@
-# su-emailspoof - PhishSim Training Tool
+# PhishSim
 
-Phishing awareness training tool for sending simulated phishing email campaigns and tracking employee responses.
+> A phishing-awareness training tool for running simulated campaigns and measuring how recipients respond.
+
+**[Live demo](https://su-emailspoof.vercel.app)**
+
+PhishSim is an educational security-awareness tool for authorized internal training. It lets you build a mock phishing campaign from realistic templates, send it to a list of recipients you control, and track who opens and who clicks — the same mechanics attackers use, surfaced so teams can measure and improve their defenses. It ships with a built-in temp-inbox so you can safely receive and inspect the simulated messages end to end. Intended only for consented awareness training, never for deceiving real targets.
 
 ## Features
 
-- Campaign management dashboard with SMTP configuration
-- 4 built-in phishing email templates (password reset, document share, IT update, package delivery)
-- Mass email sending with rate limiting
-- Email open tracking via tracking pixel
-- Link click tracking with unique tokens per recipient
-- Real-time campaign statistics (sent, opened, clicked)
-- "You've Been Phished" training landing page with security tips
+- Campaign builder with sender identity, subject, and prebuilt HTML templates (password reset, package delivery, IT update, document share)
+- Recipient management with per-recipient tracking tokens
+- Open tracking via a 1x1 pixel and click tracking via tokenized links
+- Per-campaign stats (sent, opened, clicked)
+- Disposable temp-inbox to generate addresses and receive test messages
+- Supabase-backed persistence with an automatic in-memory fallback
 
-## Quick Start
+## Stack
+
+- Node.js + Express
+- Nodemailer over Brevo SMTP for sending
+- Supabase (Postgres) for storage, with in-memory fallback
+- Deployed as a Vercel serverless function
+
+## Running locally
 
 ```bash
 npm install
-npm start
+npm run dev
 ```
 
-Open `http://localhost:3000` in your browser.
+Set `SUPABASE_URL` and `SUPABASE_ANON_KEY` in `.env` for persistence (omit them to use the in-memory store). Sending uses `BREVO_SMTP_USER` and `BREVO_SMTP_KEY`; `BASE_URL` optionally overrides the tracking-link host.
 
-## Environment Variables
+---
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PORT` | `3000` | Server port |
-| `BASE_URL` | `http://localhost:3000` | Public URL used for tracking links in emails |
-
-## How It Works
-
-1. **Create a campaign** - Configure SMTP, sender info, choose a template, add recipients
-2. **Launch** - Emails are sent with unique tracking links per recipient
-3. **Track** - Monitor who opened and clicked in real-time
-4. **Train** - Employees who click see a training page about spotting phishing
-
-## Templates
-
-Templates are HTML files in the `templates/` directory. Use these placeholders:
-- `{{link}}` - Tracking link (required)
-- `{{name}}` - Recipient name
-- `{{email}}` - Recipient email
-
-## For Authorized Security Training Only
-
-This tool is designed exclusively for internal security awareness training with proper authorization.
+Part of a series of 91 small web apps. [Browse them all](https://su-slopmachine.vercel.app).
